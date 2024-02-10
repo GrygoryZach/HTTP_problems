@@ -1,18 +1,18 @@
-import sys
 from io import BytesIO
-# Этот класс поможет нам сделать картинку из потока байт
 
 import requests
 from PIL import Image
 
-toponym_to_find = input()
+toponym_to_find = input("Введите адрес обьекта: ")
+deg_x, deg_y = map(float, input("Введите размеры обьекта: ").split())
 
 geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
 
 geocoder_params = {
     "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
     "geocode": toponym_to_find,
-    "format": "json"}
+    "format": "json",
+}
 
 response = requests.get(geocoder_api_server, params=geocoder_params)
 
@@ -25,12 +25,11 @@ toponym = json_response["response"]["GeoObjectCollection"][
 toponym_coodrinates = toponym["Point"]["pos"]
 toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
 
-delta = "0.005"
-
 map_params = {
     "ll": ",".join([toponym_longitude, toponym_lattitude]),
-    "spn": ",".join([delta, delta]),
-    "l": "map"
+    "spn": f"{deg_x},{deg_y}",
+    "l": "map",
+    "pt": f"{toponym_longitude},{toponym_lattitude}"
 }
 
 map_api_server = "http://static-maps.yandex.ru/1.x/"
