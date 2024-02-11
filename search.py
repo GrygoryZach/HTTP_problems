@@ -36,30 +36,36 @@ search_params = {
     "lang": "ru_RU",
     "ll": f"{toponym_longitude},{toponym_lattitude}",
     "type": "biz",
-    "results": "1"
+    "results": "10"
 
 }
 response_org = requests.get(search_api_server, params=search_params)
 if not response_org:
     pass
 json_response_org = response_org.json()
-pharmacy = json_response_org["features"][0]
-pharmacy_longitude, pharmacy_lattitude = pharmacy["geometry"]["coordinates"]
-info = pharmacy["properties"]
-snippet = {"address": info['description'], "name": info["name"], "hours": info["CompanyMetaData"]['Hours']['text'],
-           "distance": lonlat_distance((toponym_longitude, toponym_lattitude),
-                                       (pharmacy_longitude, pharmacy_lattitude))}
-print(snippet)
+print()
+pharmacies = []
+for i in range(min(10, json_response_org["properties"]['ResponseMetaData']["SearchResponse"]["found"])):
+    pharmacy = json_response_org["features"][i]
+    pharmacy_longitude, pharmacy_lattitude = pharmacy["geometry"]["coordinates"]
+    info = pharmacy["properties"]["CompanyMetaData"]
+    if 'Hours' in info:
+        if 'круглосуточно' in info['Hours']['text']:
+            ph_type = "pmrdm"
+        else:
+            ph_type = "pmlbm"
+    else:
+        ph_type = "pmgrm"
+    pharmacies.append(f"{pharmacy_longitude},{pharmacy_lattitude},{ph_type}")
 
 # Изображение
 map_params = {
     "ll": f"{toponym_longitude},{toponym_lattitude}",
     "l": "map",
-    "pt": f"{toponym_longitude},{toponym_lattitude},pma~{pharmacy_longitude},{pharmacy_lattitude},pmb"
+    "pt": f"{toponym_longitude},{toponym_lattitude},pmwtm~{'~'.join(pharmacies)}"
 }
 
 map_api_server = "http://static-maps.yandex.ru/1.x/"
 response = requests.get(map_api_server, params=map_params)
 
-Image.open(BytesIO(
-    response.content)).show()
+Image.open(BytesIO(response.content)).show()
